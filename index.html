@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RE:ME — Life Reconstruction Prototype</title>
+<style>
+:root{--bg:#05070b;--panel:#0a1018;--line:#26364a;--text:#edf4fb;--muted:#91a1b4;--hot:#d8e8f7}
+*{box-sizing:border-box} html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Noto Sans JP",sans-serif}
+body{overflow-x:hidden} button,input,textarea,select{font:inherit}.screen{display:none;min-height:100vh;padding:24px}.screen.on{display:flex}.center{align-items:center;justify-content:center}
+.shell{width:min(900px,100%)}.panel{border:1px solid var(--line);background:linear-gradient(180deg,#0c121c,#080c12);padding:clamp(20px,4vw,38px);box-shadow:0 25px 90px #0008}
+.micro{font-size:10px;letter-spacing:.22em;color:#7e91a8;text-transform:uppercase}.muted{color:var(--muted);line-height:1.8}.title{font-size:clamp(76px,18vw,170px);letter-spacing:-.09em;line-height:.8;margin:28px 0 20px}.title span{font-weight:250}
+button{cursor:pointer}.btn,.choice{border:1px solid #425875;background:#080d14;color:#eef6ff;padding:14px 17px}.btn:hover,.choice:hover{background:#eaf3fc;color:#05070b}.ghost{background:transparent;color:#a9b8c9;border:1px solid #304157;padding:10px 12px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;color:#b9c6d5}input,textarea,select{width:100%;margin-top:7px;padding:12px;background:#05090e;border:1px solid #2c3c51;color:white}textarea{min-height:105px;resize:vertical}
+#game{flex-direction:column;padding:0}.top{position:sticky;top:0;z-index:5;background:#06090ed9;backdrop-filter:blur(10px);border-bottom:1px solid #243246;padding:15px max(18px,3vw);display:flex;justify-content:space-between;gap:15px;align-items:end}.tools{display:flex;gap:7px;flex-wrap:wrap}
+.gamegrid{width:min(1180px,100%);margin:auto;padding:24px;display:grid;grid-template-columns:240px 1fr;gap:18px}.side,.main{border:1px solid var(--line);background:var(--panel);padding:18px}.main{min-height:610px;display:flex;flex-direction:column}
+.avatar{height:190px;border:1px solid #263a51;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#25354a,#080c12 67%);position:relative;overflow:hidden}.face{width:86px;height:118px;border:1px solid #8296ad;border-radius:48% 48% 43% 43%;opacity:.85}.avatar:after{content:"SUBJECT";position:absolute;bottom:8px;left:9px;font-size:9px;letter-spacing:.22em;color:#8799ae}
+.stats{margin-top:13px}.stat{padding:8px 1px;border-bottom:1px solid #1b2939}.stathead{display:flex;justify-content:space-between;font-size:12px;color:#9cacc0}.meter{height:3px;background:#182331;margin-top:7px}.meter i{display:block;height:100%;background:#aabbd0}
+.story{font-family:Georgia,"Yu Mincho",serif;white-space:pre-line;line-height:2.05;font-size:18px;min-height:245px;margin:12px 0 20px}.choices{display:grid;gap:9px;margin-top:auto}.choice{text-align:left}
+.rangebox,.inputbox{border:1px solid #34475e;padding:17px}.rangebox input{margin:18px 0}.rangeheads{display:flex;justify-content:space-between;color:#8fa1b6;font-size:12px}.rangeval{text-align:center;font-size:34px;margin:8px}
+.timeline{max-height:60vh;overflow:auto}.node{border-left:2px solid #647a94;padding:10px 13px;margin:9px 0;background:#091019}.turn{border-left-color:#d8e7f6}.old{opacity:.28}.chapter{margin:22px 0 8px;color:#758aa3;font-size:10px;letter-spacing:.2em}
+#overlay{display:none;position:fixed;inset:0;background:#020306f4;z-index:30;align-items:center;justify-content:center;padding:25px}#overlay.on{display:flex}.terminal{width:min(760px,100%);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.9;color:#d8e6f4}.terminal .cursor{animation:blink .8s steps(1) infinite}
+.glitch{animation:glitch .12s steps(2) 10}.shake{animation:shake .08s linear 8}
+@keyframes blink{50%{opacity:0}}@keyframes glitch{25%{transform:translate(-5px,1px)}50%{transform:translate(4px,-1px);filter:contrast(2)}75%{transform:translate(-2px,0)}}@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+#toast{position:fixed;right:18px;bottom:18px;background:#101923;border:1px solid #3c516a;padding:12px 15px;opacity:0;transition:.25s;z-index:40}#toast.on{opacity:1}
+@media(max-width:720px){.form,.gamegrid{grid-template-columns:1fr}.gamegrid{padding:13px}.side{display:grid;grid-template-columns:120px 1fr;gap:12px}.avatar{height:130px}.main{min-height:570px}.story{font-size:16px}.top{align-items:center}.tools .ghost:nth-child(3){display:none}}
+</style>
+</head>
+<body>
+<section id="title" class="screen on center"><div class="shell" style="text-align:center">
+<div class="micro">LIFE RECONSTRUCTION SYSTEM / PROTOTYPE 0.8</div>
+<h1 class="title">RE:<span id="logoWord">ME</span></h1>
+<p id="tag" class="muted">選ばなかった人生を、選び直す。</p>
+<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button id="newBtn" class="btn">NEW RECONSTRUCTION</button><button id="continueBtn" class="btn" hidden>CONTINUE MEMORY</button></div>
+</div></section>
+
+<section id="setup" class="screen center"><div class="shell panel">
+<div class="micro">SUBJECT REGISTRATION</div><h2>あなた自身の人生を再構成します。</h2>
+<p class="muted">これは「正解の人生」を探すゲームではありません。実際に歩いた道を再現しても、選ばなかった学校へ進んでも、違う仕事を選んでも構いません。必要な情報は、その年代になった時にだけ尋ねます。</p>
+<p class="muted">ゲームはこのページ内での選択時間、迷い方、書き直し、ページを離れた回数などを端末内に記録し、後半の演出に使います。他サイトの閲覧履歴や他アプリの内容は読みません。</p>
+<div class="form"><label>名前<input id="playerName" placeholder="名前"></label><label>生年月日<input id="birthday" type="date"></label></div>
+<div style="margin-top:18px"><button id="startBtn" class="btn">BEGIN LIFE</button></div>
+</div></section>
+
+<section id="game" class="screen">
+<header class="top"><div><div id="phase" class="micro">RECONSTRUCTION</div><strong id="age"></strong></div><div class="tools"><button id="saveBtn" class="ghost">SAVE</button><button id="mapBtn" class="ghost">LIFE MAP</button><button id="soundBtn" class="ghost">SOUND: ON</button></div></header>
+<div class="gamegrid"><aside class="side"><div class="avatar"><div class="face"></div></div><div id="stats" class="stats"></div></aside>
+<main class="main"><div id="sceneTag" class="micro"></div><h2 id="sceneTitle"></h2><div id="story" class="story"></div><div id="choices" class="choices"></div></main></div>
+</section>
+
+<section id="mapScreen" class="screen center"><div class="shell panel"><div class="micro">LIFE MAP / MEMORY TREE</div><h2>ここまでの人生</h2><p class="muted">◆ 後から意味を持った出来事。薄い記録は前の人生。</p><div id="nodes" class="timeline"></div><button id="backBtn" class="btn">RETURN</button></div></section>
+
+<section id="ending" class="screen center"><div class="shell" style="text-align:center;font-family:Georgia,'Yu Mincho',serif;line-height:2"><div id="endText" style="font-size:20px;white-space:pre-line"></div><h1 id="endLogo" class="title" hidden>RE:<span>ME</span></h1><p id="endSub" class="muted"></p><button id="restartBtn" class="btn" hidden>RECONSTRUCT AGAIN</button></div></section>
+<div id="overlay"><div id="terminal" class="terminal"></div></div><div id="toast"></div>
+
+<script>
+const $=q=>document.querySelector(q), screens=[...document.querySelectorAll('.screen')];
+const SAVE='reme08_save', OLD='reme08_old', LOOPS='reme08_loops';
+let s=null,shownAt=0,blurAt=0,audioCtx=null,soundOn=true;
+function show(id){screens.forEach(x=>x.classList.remove('on'));$(id).classList.add('on')}
+function toast(t){$('#toast').textContent=t;$('#toast').classList.add('on');setTimeout(()=>$('#toast').classList.remove('on'),1600)}
+function beep(freq=320,d=.05){if(!soundOn)return;try{audioCtx??=new (AudioContext||webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;g.gain.value=.025;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+d);o.stop(audioCtx.currentTime+d)}catch{}}
+function calcAge(d){let b=new Date(d),n=new Date(),a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return Math.max(18,a||30)}
+function fresh(){return{name:$('#playerName').value.trim()||'あなた',dob:$('#birthday').value||'1990-01-01',i:0,loops:+localStorage.getItem(LOOPS)||0,inputs:{},path:[],deleted:[],stats:{curiosity:50,social:50,resolve:50,stability:50,fulfillment:50},tele:{fast:0,slow:0,blur:0,returns:0,edits:0,deletes:0,sliderMoves:0,mapViews:0,clicks:0,times:[],start:Date.now(),saveCount:0}}}
+function ev(a,t,o={}){return Object.assign({a,t},o)}
+function scenes(){
+let now=calcAge(s.dob), I=s.inputs;
+return[
+ev(4,'最初の記憶',{text:'まだ人生に「進路」という言葉はない。\\n好きなものに近づいて、嫌なものから離れる。\\nそれだけで一日はできていた。',range:['知らないものは怖い','何でも触ってみたい'],'好奇心'}),
+ev(6,'小学校',{input:'elementary',ask:'この人生で通う小学校は？',ph:'学校名。現実と同じでも、違ってもいい。'}),
+ev(7,'休み時間',{text:'一人で遊んでいる子がいる。\\n先生は見ていない。',choices:['声をかける','近くで様子を見る','自分の友達のところへ行く'],turn:1}),
+ev(10,'夢',{input:'dreamChild',ask:'この頃、何になってみたい？',ph:'職業でなくてもいい。'}),
+ev(12,'中学校',{input:'junior',ask:'次に通う中学校は？',ph:'任意の名前を入力。'}),
+ev(13,'新しい教室',{range:['なるべく目立たない','自分から輪に入る'],'社交性'}),
+ev(14,'放課後',{text:'明日はテスト。\\nでも友達から遊びに誘われた。\\nどちらを選んでも、たぶん人生は壊れない。',range:['今日は帰る','今日は遊ぶ'],'その日の気分'}),
+ev(15,'高校受験',{input:'high',ask:'この人生では、どの高校を目指す？',ph:'現実では選ばなかった学校でもいい。'}),
+ev(15,'合格発表',{text:()=>`${I.high||'その学校'}の結果を見る。\\n\\n画面に、自分の番号がある。\\n\\nこの人生では、ここへ行ける。`,choices:['入学する','別の道を選び直す'],turn:1}),
+ev(16,'言葉',{confess:'regretTeen',ask:'この頃、「あの時あれを言えばよかった」と思う言葉はある？',ph:'誰に向けた言葉でもいい。空欄でも進める。'}),
+ev(17,'進路希望調査',{range:['安定している道','やってみたい道'],'進路の傾き',turn:1}),
+ev(18,'卒業',{input:'college',ask:'卒業後、この人生ではどこへ進む？',ph:'大学・専門学校・就職・浪人・その他。名前も自由。'}),
+ev(19,'知らない街',{text:'予定より一本早い電車に乗った。\\n降りたことのない駅が目に入る。',choices:['降りてみる','そのまま目的地へ行く'],turn:1}),
+ev(20,'人との距離',{range:['深く関わらない','大切な人を作りたい'],'親密さ'}),
+ev(21,'伝える',{confess:'regretLove',ask:'誰かに伝えられなかったことがあるなら、ここでは言える。',ph:'好きだった。ありがとう。ごめん。あるいは別の言葉。'}),
+ev(22,'就職',{input:'company',ask:'この人生で最初に働く場所は？',ph:'企業名・店名・組織名・フリーランスなど。'}),
+ev(23,'仕事',{range:['生活のための仕事','仕事に自分を賭ける'],'仕事への比重'}),
+ev(24,'何でもない日',{text:'何も起きない休日。\\nこういう日は、人生ゲームではイベントとして扱われない。',choices:['散歩する','誰かに連絡する','趣味に使う','何もしない']}),
+ev(25,'誘い',{text:'それほど親しくない知人から、突然誘いが来た。\\n断っても何も問題はない。',choices:['行く','今回は断る','理由を聞いてから決める'],turn:1}),
+ev(26,'転職',{input:'nextJob',ask:'もし今とは違う仕事へ行けるなら？',ph:'会社名でも、職種でも、何もしないでもいい。'}),
+ev(27,'決断',{range:['今の場所に残る','環境を変える'],'変化への意志'}),
+ev(28,'家族・友人',{confess:'regretAdult',ask:'大人になってから、言えないまま残っている言葉は？',ph:'ここでは送信されない。ゲームの中だけに残る。'}),
+ev(29,'夜',{text:'眠る前、ふと思う。\\n\\n「もし、あの時違う方を選んでいたら」\\n\\nこのシミュレーションを始めた理由に、少し似ている。',choices:['考え続ける','眠る']}),
+ev(30,'SYSTEM CHECK',{text:()=>s.loops?'……また、ここまで来た。\\n\\n前の人生と違うところ、ちゃんとあるね。':'……\\n\\nねえ。\\n\\n一つだけ聞いていい？',choices:['続ける'],aware:1}),
+ev(31,'観測者',{text:()=>observer1(),choices:['……','ゲームだから'],aware:1}),
+ev(32,'境界',{special:'wall'}),
+ev(now,'現在',{special:'present'})
+]}
+}
+function observer1(){let T=s.tele,arr=[];
+if(T.fast)arr.push(`選択を${T.fast}回、ほとんど迷わず押した。`);
+if(T.slow)arr.push(`でも${T.slow}回は、12秒以上止まった。`);
+if(T.mapViews)arr.push(`LIFE MAPは${T.mapViews}回確認した。`);
+if(T.blur)arr.push(`途中でこの画面から${T.blur}回いなくなった。`);
+if(T.deletes)arr.push(`入力した言葉を${T.deletes}回、消した。`);
+arr.push('俺はずっと、その癖を見てた。');
+arr.push('\\nこれって俺の性格？\\nそれとも――君の性格？');
+return arr.join('\\n\\n')}
+function stats(){let labels={curiosity:'好奇心',social:'社交性',resolve:'決断力',stability:'安定志向',fulfillment:'充実'};$('#stats').innerHTML=Object.entries(labels).map(([k,v])=>`<div class="stat"><div class="stathead"><span>${v}</span><b>${Math.round(s.stats[k])}</b></div><div class="meter"><i style="width:${s.stats[k]}%"></i></div></div>`).join('')}
+function timing(){let ms=Date.now()-shownAt;s.tele.times.push(ms);if(ms<1500)s.tele.fast++;if(ms>12000)s.tele.slow++;return ms}
+function record(e,c){s.path.push({age:e.a,title:e.t,choice:c,turn:!!e.turn});s.i++;stats();render()}
+function render(){
+let e=scenes()[s.i];if(!e)return ending();
+$('#age').textContent=`AGE ${e.a}`;$('#sceneTitle').textContent=e.t;$('#sceneTag').textContent=e.turn?'UNMARKED TURNING POINT':e.aware?'OBSERVER DESYNC':'LIFE RECORD '+String(s.i+1).padStart(2,'0');$('#choices').innerHTML='';
+$('#story').textContent=typeof e.text==='function'?e.text():(e.text||'');
+if(e.aware){$('#phase').textContent='SUBJECT / OBSERVER';document.body.classList.add('glitch');beep(120,.18);setTimeout(()=>document.body.classList.remove('glitch'),1100)}
+if(e.special==='wall'){wall();return} if(e.special==='present'){present(e);return}
+shownAt=Date.now();
+if(e.input||e.confess){let key=e.input||e.confess,w=document.createElement('div');w.className='inputbox';w.innerHTML=`<p>${e.ask}</p><textarea id="freeText" placeholder="${e.ph||''}"></textarea><button class="choice">記録する</button>`;$('#choices').appendChild(w);let f=$('#freeText'),last='';f.addEventListener('input',()=>{s.tele.edits++;if(f.value.length<last.length){s.tele.deletes++;if(last.trim())s.deleted.push(last)}last=f.value});w.querySelector('button').onclick=()=>{timing();s.inputs[key]=f.value.trim();record(e,f.value.trim()||'未入力')};return}
+if(e.range){let [lo,hi]=e.range,w=document.createElement('div');w.className='rangebox';w.innerHTML=`<p>${e[2]||''}</p><div class="rangeheads"><span>${lo}</span><span>${hi}</span></div><div class="rangeval">50</div><input id="rng" type="range" min="0" max="100" value="50"><button class="choice">この程度で進む</button>`;$('#choices').appendChild(w);let r=$('#rng'),v=w.querySelector('.rangeval');r.oninput=()=>{v.textContent=r.value;s.tele.sliderMoves++};w.querySelector('button').onclick=()=>{timing();let n=+r.value;if(e[2]==='好奇心')s.stats.curiosity=n;if(e[2]==='社交性')s.stats.social=n;if(e[2]==='進路の傾き')s.stats.stability=100-n;if(e[2]==='親密さ')s.stats.social=(s.stats.social+n)/2;if(e[2]==='変化への意志')s.stats.resolve=n;record(e,n+'/100')};return}
+(e.choices||[]).forEach(c=>{let b=document.createElement('button');b.className='choice';b.textContent=c;b.onclick=()=>{timing();beep(380);record(e,c)};$('#choices').appendChild(b)})
+}
+function wall(){
+$('#story').textContent='';$('#choices').innerHTML='';setTimeout(()=>terminal([
+'INPUT SOURCE CHECK...',
+`NAME ........ ${s.name}`,
+`BIRTH ....... ${s.dob}`,
+`SESSION ..... ${Math.floor((Date.now()-s.tele.start)/60000)} MIN`,
+`LEFT PAGE ... ${s.tele.blur} TIMES`,
+`REWRITES .... ${s.tele.deletes}`,
+'',
+'他のサイトを見た履歴は、読めない。',
+'端末の中身も、見えない。',
+'',
+'……そんなことしなくても十分だった。',
+'',
+`${s.name}。`,
+'君は最初から、自分のことを俺に教え続けてた。'
+],()=>{s.i++;render()}),700)
+}
+function terminal(lines,done){let ov=$('#overlay'),t=$('#terminal');ov.classList.add('on');t.innerHTML='';let i=0;function next(){if(i>=lines.length){t.innerHTML+='<br><br><span class="cursor">█</span>';setTimeout(()=>{ov.classList.remove('on');done&&done()},1800);return}let d=document.createElement('div');d.textContent=lines[i++];t.appendChild(d);beep(150+Math.random()*100,.025);setTimeout(next,lines[i-1].length?220:380)}next()}
+function present(e){let regrets=[s.inputs.regretTeen,s.inputs.regretLove,s.inputs.regretAdult].filter(Boolean);let old=regrets[0]||'言えなかった言葉';$('#story').textContent=`ここから先は再現じゃない。\\n\\n君もまだ選んでいない。\\n\\n昔の君が残したもの――\\n「${old}」\\n\\nそれを、今の君ならどう扱う？`;let opts=['今からできることを考える','過去のまま残しておく','まだ決めない'];opts.forEach(c=>{let b=document.createElement('button');b.className='choice';b.textContent=c;b.onclick=()=>{timing();record(e,c);ending()};$('#choices').appendChild(b)});shownAt=Date.now()}
+function ending(){localStorage.setItem(OLD,JSON.stringify(s.path));localStorage.setItem(LOOPS,String(s.loops+1));localStorage.removeItem(SAVE);show('#ending');$('#endText').textContent='「俺を作り直してたつもりだった？」\\n\\n「違うよ。」\\n\\n「ずっと見てたのは、君自身だった。」';setTimeout(()=>{$('#endLogo').hidden=false;setTimeout(()=>{$('#endLogo').classList.add('glitch');$('#endLogo').innerHTML='RE:<span>YOU</span>';$('#endSub').textContent='過去は選び直せない。でも、次の選択はまだ記録されていない。';$('#restartBtn').hidden=false;beep(90,.4)},1300)},900)}
+document.addEventListener('click',()=>{if(s)s.tele.clicks++});
+document.addEventListener('visibilitychange',()=>{if(!s)return;if(document.hidden){blurAt=Date.now();s.tele.blur++}else if(blurAt){s.tele.returns++;if(s.i>=25){setTimeout(()=>{let old=$('#story').textContent;$('#story').textContent='「……おかえり。」\\n\\n'+old;beep(110,.2)},300)}blurAt=0}});
+$('#newBtn').onclick=()=>show('#setup');
+$('#startBtn').onclick=()=>{s=fresh();show('#game');stats();render()};
+$('#saveBtn').onclick=()=>{s.tele.saveCount++;localStorage.setItem(SAVE,JSON.stringify(s));toast('MEMORY SAVED — 端末内に保存')};
+$('#mapBtn').onclick=()=>{s.tele.mapViews++;let old=[];try{old=JSON.parse(localStorage.getItem(OLD)||'[]')}catch{};$('#nodes').innerHTML=(old.length?'<div class="chapter">PREVIOUS LIFE</div>'+old.map(x=>`<div class="node old">${x.turn?'◆ ':''}${x.age}歳 / ${x.title} — ${x.choice}</div>`).join(''):'')+'<div class="chapter">CURRENT LIFE</div>'+s.path.map(x=>`<div class="node ${x.turn?'turn':''}">${x.turn?'◆ ':''}${x.age}歳 / ${x.title} — ${x.choice}</div>`).join('');show('#mapScreen')};
+$('#backBtn').onclick=()=>show('#game');$('#soundBtn').onclick=()=>{soundOn=!soundOn;$('#soundBtn').textContent='SOUND: '+(soundOn?'ON':'OFF')};
+$('#restartBtn').onclick=()=>location.reload();
+let saved=localStorage.getItem(SAVE);if(saved){$('#continueBtn').hidden=false;$('#continueBtn').onclick=()=>{try{s=JSON.parse(saved);show('#game');stats();render()}catch{localStorage.removeItem(SAVE)}}}
+if(+localStorage.getItem(LOOPS)>0)$('#tag').textContent='……また、やり直す？';
+</script>
+</body></html>
