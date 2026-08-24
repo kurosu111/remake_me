@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RE:ME Prototype v0.3</title>
+<style>
+:root{--bg:#05070a;--panel:#0d1118;--text:#edf3fb;--muted:#8490a0;--line:#273141;--danger:#ff7387}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif}
+body{overflow-x:hidden}button,input,select{font:inherit}button{cursor:pointer}
+#scan{position:fixed;inset:0;pointer-events:none;z-index:20;opacity:.06;background:repeating-linear-gradient(0deg,transparent 0 3px,#fff 4px)}
+.screen{display:none;min-height:100vh;padding:20px}.screen.active{display:flex}.center{align-items:center;justify-content:center}
+.panel{width:min(760px,100%);padding:34px;border:1px solid var(--line);background:rgba(13,17,24,.95)}
+.eyebrow,.tag{font-size:10px;letter-spacing:.2em;color:var(--muted)}h1{font-size:clamp(64px,14vw,150px);margin:18px 0;letter-spacing:-.08em;line-height:.9}h1 span{font-weight:300}
+h2{font-size:28px;margin:10px 0 20px}.sub{color:#a7b1bf;line-height:1.8}
+.primary,.ghost,.choice{border:1px solid #55657b;background:#090d13;color:#eef4fb;padding:13px 16px;transition:.2s}.primary:hover,.ghost:hover,.choice:hover{background:#e9f0f8;color:#06080b}
+.primary{margin-top:26px;letter-spacing:.12em}.ghost{font-size:10px;padding:9px 11px;color:#aebaca;background:transparent}
+label{display:block;margin:20px 0;color:#c9d2dd}input,select{width:100%;margin-top:8px;padding:11px;background:#080b10;color:#fff;border:1px solid #2b3748}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+#game{flex-direction:column}.topbar{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;border-bottom:1px solid var(--line);padding:8px 2vw 16px}.topbar strong{font-size:23px}
+.sync{width:180px;font-size:9px;letter-spacing:.18em;color:#718095}.syncline{height:3px;background:#202938;margin-top:7px}.syncline i{display:block;height:100%;width:7%;background:#dfeaff;transition:1s}
+.layout{width:min(1120px,100%);margin:auto;padding:28px 0;display:grid;grid-template-columns:250px 1fr;gap:18px}@media(max-width:760px){.layout{grid-template-columns:1fr}.avatar{height:160px!important}}
+.side,.story{border:1px solid var(--line);background:rgba(12,16,23,.9)}.side{padding:16px}.avatar{height:245px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border:1px solid #202938;background:radial-gradient(circle at 50% 35%,#1b2431,#080b10 72%)}
+.face{width:105px;height:140px;border:1px solid #75859a;border-radius:44% 44% 48% 48%;position:relative;opacity:.75}.hair{position:absolute;inset:-16px -12px 74px;background:#171c24;border-radius:60% 60% 15% 15%;border-bottom:1px solid #536174}
+.eye{position:absolute;top:67px;width:14px;height:2px;background:#d9e8fa}.e1{left:22px}.e2{right:22px}.mouth{position:absolute;top:108px;left:44px;width:18px;height:1px;background:#8190a4}.name{position:absolute;left:12px;bottom:11px;font-size:10px;letter-spacing:.18em;color:#9eabbc}
+.stats{margin-top:14px}.stats div{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid #1c2532;color:#8f9aaa}.stats b{color:#f0f5fb}
+.career{border:1px solid #1f2a38;margin-top:14px;padding:11px}.career small{display:block;color:#687689;letter-spacing:.16em}.career strong{display:block;margin-top:4px;font-size:13px}
+.story{padding:27px;min-height:525px;display:flex;flex-direction:column}.storyHead{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.world{border-left:2px solid #68788e;background:#091019;padding:11px 14px;color:#95a2b5;font-size:13px;line-height:1.65;margin-bottom:18px}.text{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:17px;line-height:2;white-space:pre-line;min-height:205px}
+.choices{margin-top:auto;display:grid;gap:10px;padding-top:24px}.choice{text-align:left;border-color:#2c394b}.choice:hover{padding-left:22px}.choice.corrupt{border-color:#7a3744;color:#ff9cab;animation:flicker .85s infinite}
+footer{text-align:center;padding:13px;color:#465264;font-size:9px;letter-spacing:.16em}.hidden{display:none!important}
+.timeline{width:min(900px,100%);max-height:88vh;overflow:auto}.logItem{padding:10px 14px;border-left:2px solid #3d4a5d;background:#0a0f16;margin:10px 0}.logItem p{margin:5px 0 0;color:#95a1b2;font-size:13px;line-height:1.55}
+.whisper{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;color:#dce8f7;font-family:"Yu Mincho",serif;font-size:22px;pointer-events:none;text-shadow:0 0 10px #fff;opacity:0}
+.whisper.show{animation:whisper 1.7s ease}.glitch{animation:glitch .22s steps(2,end) 5}.shake{animation:shake .3s linear}
+@keyframes whisper{0%{opacity:0}15%{opacity:.85}72%{opacity:.8}100%{opacity:0}}@keyframes flicker{0%,100%{opacity:1}50%{opacity:.48}}
+@keyframes glitch{0%{transform:none}25%{transform:translate(-5px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,1px)}100%{transform:none}}@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.endWrap{width:min(720px,92%);text-align:center;font-family:"Yu Mincho",serif;font-size:23px;line-height:2}.endWrap .primary{font-family:system-ui;font-size:18px}
+</style>
+</head>
+<body>
+<div id="scan"></div><div id="whisper" class="whisper"></div>
+<section id="title" class="screen active center"><div style="text-align:center"><p class="eyebrow">LIFE REMAKE SIMULATION / v0.3</p><h1>RE:<span>ME</span></h1><p class="sub">あの日、選ばなかった方へ。</p><button id="start" class="primary">NEW LIFE</button></div></section>
+<section id="setup" class="screen center"><div class="panel"><p class="tag">PROFILE / OPTIONAL MEMORY INPUT</p><h2>あなたの人生を再構成します</h2><p class="sub">固有名詞はすべて任意です。空欄なら一般名で進行します。</p>
+<div class="grid"><label>生年<select id="birth"><option>1980</option><option selected>1990</option><option>2000</option></select></label><label>現在の年齢<input id="age" type="number" min="18" max="80" value="36"></label></div>
+<label>過去に少し後悔していること<select id="regret"><option value="study">もっと勉強しておけばよかった</option><option value="friend">もっと人と関わればよかった</option><option value="challenge">もっと挑戦しておけばよかった</option><option value="love">気持ちを伝えておけばよかった</option><option value="career">違う仕事を選んでみたかった</option></select></label>
+<div class="grid"><label>高校名（任意）<input id="school" placeholder="例：○○高校"></label><label>地元・最寄り駅など（任意）<input id="town" placeholder="例：○○駅"></label><label>最初の勤務先（任意）<input id="company" placeholder="例：○○株式会社"></label><label>よく行った場所（任意）<input id="place" placeholder="例：駅前のゲームセンター"></label></div>
+<button id="begin" class="primary">REMAKE START</button></div></section>
+<section id="game" class="screen"><header class="topbar"><div><p id="phase" class="eyebrow">REMAKE LIFE</p><strong id="year"></strong></div><div class="sync"><span>SYNC</span><div class="syncline"><i id="syncbar"></i></div></div></header>
+<main class="layout"><aside class="side"><div class="avatar"><div class="face"><div class="hair"></div><div class="eye e1"></div><div class="eye e2"></div><div class="mouth"></div></div><div id="name" class="name">REMAKE YOU</div></div>
+<div class="stats"><div><span>学力</span><b id="sStudy">40</b></div><div><span>社交性</span><b id="sSocial">40</b></div><div><span>勇気</span><b id="sCourage">40</b></div><div><span>幸福度</span><b id="sHappy">50</b></div><div><span>経済力</span><b id="sMoney">25</b></div></div><div class="career"><small>CAREER</small><strong id="career">未決定</strong></div></aside>
+<section class="story"><div class="storyHead"><div><p id="tag" class="tag"></p><h2 id="sceneTitle"></h2></div><button id="logBtn" class="ghost">LIFE LOG</button></div><div id="world" class="world hidden"></div><div id="storyText" class="text"></div><div id="choices" class="choices"></div></section></main><footer id="era"></footer></section>
+<section id="log" class="screen center"><div class="panel timeline"><div class="storyHead"><div><p class="tag">LIFE ARCHIVE</p><h2>人生年表</h2></div><button id="backLog" class="ghost">BACK</button></div><div id="logList"></div></div></section>
+<section id="ending" class="screen center"><div class="endWrap"><p id="end1"></p><p id="end2"></p><button id="life" class="primary hidden">人生を続ける</button></div></section>
+<section id="final" class="screen center"><div style="text-align:center"><p class="eyebrow">LIFE CONTINUES OUTSIDE THIS SCREEN</p><h1>RE:<span>YOU</span></h1><p class="sub">ここから先は、まだ記録されていない。</p><button id="again" class="primary">もう一度、会う</button></div></section>
+<script>
+const $=s=>document.querySelector(s), screens=[...document.querySelectorAll('.screen')];
+const show=id=>{screens.forEach(x=>x.classList.remove('active'));$(id).classList.add('active')};
+const eraData={
+1980:{label:'1980s CHILD / 1990s YOUTH',age14:'1994年。バブル崩壊後の空気が家庭にも入り込み始めていた。',age18:'1998年。就職氷河期という言葉が、進路の現実になっていく。',age22:'2002年。長引く不況の中、「正社員になること」自体に重みがあった。',jobs:[['メーカー技術職','メーカー技術職'],['金融系会社員','金融系会社員'],['IT業界へ進む','ITエンジニア'],['地元企業に就職','地域企業勤務']]},
+1990:{label:'1990s CHILD / 2000s YOUTH',age14:'2004年。携帯メール、ブログ、ゲーム機。ネット上の人間関係が日常に入り始めた。',age18:'2008年。世界金融危機のニュースが、就職への不安を現実にした。',age22:'2012年。スマートフォンとSNSが生活の中心へ入り込んでいく。',jobs:[['安定した会社員を目指す','一般企業勤務'],['IT・Web業界へ進む','Web / IT職'],['公務員を目指す','公務員'],['やりたいことを優先する','クリエイティブ職']]},
+2000:{label:'2000s CHILD / 2010s YOUTH',age14:'2014年。LINE、YouTube、SNS。友達との関係は学校の外でも途切れなくなった。',age18:'2018年。SNS発の仕事や個人活動が、珍しいものではなくなっていた。',age22:'2022年。コロナ禍を経て、オンライン授業やリモートワークが普通の選択肢になった。',jobs:[['IT企業に入る','ITエンジニア'],['動画・配信を仕事にする','配信 / 動画制作'],['リモート中心の仕事を探す','リモートワーカー'],['大企業を目指す','大企業勤務']]}
+};
+const regretText={study:'もっと勉強しておけばよかった',friend:'もっと人と関わればよかった',challenge:'もっと挑戦しておけばよかった',love:'気持ちを伝えておけばよかった',career:'違う仕事を選んでみたかった'};
+let st={},scenes=[],choiceShownAt=0;
+function reset(){st={birth:+$('#birth').value,age:+$('#age').value,regret:$('#regret').value,school:$('#school').value.trim()||'高校',town:$('#town').value.trim()||'地元',company:$('#company').value.trim()||'',place:$('#place').value.trim()||'いつもの場所',idx:0,sync:8,unease:0,logViews:0,career:'未決定',stats:{study:40,social:40,courage:40,happy:50,money:25},log:[],seenMinor:false,seenMedium:false,awakened:false}}
+function apply(d={}){Object.keys(d).forEach(k=>st.stats[k]=Math.max(0,Math.min(99,st.stats[k]+d[k])));st.sync=Math.min(100,st.sync+7);ui()}
+function ui(){$('#sStudy').textContent=st.stats.study;$('#sSocial').textContent=st.stats.social;$('#sCourage').textContent=st.stats.courage;$('#sHappy').textContent=st.stats.happy;$('#sMoney').textContent=st.stats.money;$('#career').textContent=st.career;$('#syncbar').style.width=st.sync+'%';$('#era').textContent=eraData[st.birth].label}
+function whisper(t){$('#whisper').textContent=t;$('#whisper').classList.remove('show');void $('#whisper').offsetWidth;$('#whisper').classList.add('show')}
+function glitch(){$('#game').classList.add('glitch');setTimeout(()=>$('#game').classList.remove('glitch'),1100)}
+function maybeAnomaly(){if(st.awakened)return;if(!st.seenMinor&&st.unease>=3){st.seenMinor=true;setTimeout(()=>whisper('……そっちを選ぶんだ。'),450);return}if(!st.seenMedium&&st.unease>=6){st.seenMedium=true;setTimeout(()=>{$('#name').textContent='REMAKE Y0U';document.body.classList.add('shake');setTimeout(()=>document.body.classList.remove('shake'),350)},500)}}
+function typeText(el,t,speed=13,cb){el.textContent='';let i=0;const tm=setInterval(()=>{el.textContent+=t[i++]||'';if(i>=t.length){clearInterval(tm);cb&&cb()}},speed)}
+function addLog(s,choice){st.log.push({year:st.birth+s.age,age:s.age,title:s.title,choice})}
+function buildScenes(){const e=eraData[st.birth],school=st.school,town=st.town,place=st.place;return[
+{age:14,tag:'MEMORY 01',title:'放課後',world:e.age14,text:`${school}の放課後。\n明日は数学のテスト。\n友達から「${place}に寄って帰ろう」と誘われた。`,choices:[['今日は帰って勉強する',{study:5,happy:-1},'study'],['友達と寄り道する',{social:5,happy:4,study:-1},'friend'],['少しだけ付き合う',{study:2,social:2,happy:2},'balance']]},
+{age:16,tag:'MEMORY 06',title:'帰り道',world:'',text:`${town}へ向かう帰り道。\n気になっている人と二人きりになった。\n何か話せそうな気はする。`,choices:[['自分から話しかける',{social:4,courage:4,happy:2},'love'],['遠回りして一緒に歩く',{social:3,courage:3,happy:3},'love'],['何もしない',{happy:-1},'avoid']]},
+{age:18,tag:'MEMORY 10',title:'進路',world:e.age18,text:`${school}を卒業するまで、あと少し。\n担任から進路希望調査票を渡された。`,choices:[['大学・専門教育へ進む',{study:6,money:-2},'study'],['すぐに働く',{money:4,social:2},'career'],['興味を優先して進路を決める',{courage:5,happy:3},'challenge']]},
+{age:22,tag:'MEMORY 15',title:'仕事を選ぶ',world:e.age22,career:true,text:`求人票や企業サイトを眺める。\n${st.company?st.company+'で働いた記憶もある。':''}\nでも今回は、別の入口を選べる。`,choices:e.jobs.map((x,i)=>[x[0],{study:i%2?2:3,courage:i>1?3:1,money:i==3?1:4,happy:i==3?3:1},'career',x[1]])},
+{age:25,tag:'MEMORY 21',title:'慣れてきた生活',world:'',dynamic:true,choices:[['このまま続ける',{money:3},'career'],['別の環境を探す',{courage:5,happy:2},'challenge'],['仕事以外の軸を作る',{social:2,happy:4},'friend']]},
+{age:27,tag:'MEMORY 27',title:'静かな夜',world:'',text:'何も大きなことは起きない夜。\nただ、これまで選んできた人生を少し振り返った。',choices:[['LIFE LOGを見返す',{study:1},'log'],['そのまま眠る',{happy:1},'neutral'],['昔のことを考える',{happy:-1},'regret']]},
+{age:28,tag:'SYSTEM ?',title:'……',world:'',text:'選択肢が表示される。\n\nその瞬間、画面の中の「あなた」が、少しだけこちらを見た。',choices:[['……続ける',{courage:1},'neutral'],['今、こっち見た？',{},'notice'],['気のせいだ',{},'avoid']],threshold:7},
+{age:29,tag:'UNKNOWN',title:'また選ぶの？',world:'',text:'「ねえ。」\n\n「ずっといるよね。そこに。」\n\n「俺の人生を選んでる人。」',choices:[['……',{},'neutral'],['誰？',{},'notice']],awakening:true},
+{age:30,tag:'NO RECORD',title:'見てた',world:'',observing:true,choices:[['幸せになってほしかった',{happy:2},'care'],['正解を見たかった',{happy:-1},'regret'],['自分でも分からない',{happy:1},'neutral']]},
+{age:31,tag:'REMAKE YOU',title:'選ばなかった人生',world:'',regretTalk:true,choices:[['今の人生より、こっちが良かったと思う',{happy:-2},'regret'],['今の人生も悪くないと思う',{happy:2},'accept'],['比べること自体が違う気がする',{courage:3,happy:3},'accept']]},
+{age:st.age,tag:'FINAL MEMORY',title:'ここから先',world:'',final:true,choices:[]}
+]}
+function render(){let s=scenes[st.idx];if(s.threshold&&st.unease<s.threshold){s={...s,title:'何でもない日',tag:'MEMORY 28',text:'特別なことは起きなかった。\n仕事を終えて、いつものように一日が終わる。',choices:[['帰宅する',{happy:1},'neutral'],['少し寄り道する',{happy:2,social:1},'friend']]}}if(s.awakening){st.awakened=true;$('#phase').textContent='WHO IS PLAYING?';$('#name').textContent='...YOU?';glitch()}if(s.dynamic)s.text=`${st.career}として働くことにも慣れた。\n生活はそれなりに続いている。\n\nそれでも、ときどき「別の人生だったら」と考える。`;if(s.observing)s.text=`「お前さ。」\n\n「選択肢が出るたびに、止まる時あるよね。」\n\n「LIFE LOGも ${st.logViews} 回見た。」\n\n「これ、本当に俺の人生を考えてる？」\n\n「それとも、自分のこと考えてる？」`;if(s.regretTalk)s.text=`「最初に言ってた。」\n\n「“${regretText[st.regret]}”って。」\n\n「だから俺に、それをやらせたんだよね。」\n\n「でも俺が違う人生になったのは、お前より賢かったからじゃない。」\n\n「違う選択肢が出ただけだよ。」`;
+$('#year').textContent=`AGE ${s.age} / ${st.birth+s.age}`;$('#tag').textContent=s.tag;$('#sceneTitle').textContent=s.title;if(s.world){$('#world').classList.remove('hidden');$('#world').textContent='WORLD / '+s.world}else $('#world').classList.add('hidden');$('#choices').innerHTML='';
+if(s.final){typeText($('#storyText'),`「俺はいま、${st.age}歳。」\n\n「……お前と同じところまで来た。」\n\n「ここから先の記録がない。」\n\n「未来の社会情勢も、次の仕事も、まだ決まってない。」\n\n「俺が歩けるのは、お前が歩いたところまでなんだ。」`,17,()=>setTimeout(endSequence,700));return}
+typeText($('#storyText'),s.text,12,()=>{choiceShownAt=Date.now();s.choices.forEach((c,i)=>{const b=document.createElement('button');b.className='choice'+(s.awakening&&i==1?' corrupt':'');b.textContent=c[0];b.onclick=()=>{const elapsed=(Date.now()-choiceShownAt)/1000;if(elapsed>7)st.unease+=1;if(c[2]===st.regret||c[2]==='regret')st.unease+=2;if(c[2]==='notice')st.unease+=2;if(c[2]==='log')st.unease+=1;apply(c[1]);if(s.career){st.career=c[3];ui()}addLog(s,c[0]);st.idx++;maybeAnomaly();render()};$('#choices').appendChild(b)})})}
+function renderLog(){st.logViews++;st.unease+=1;const box=$('#logList');box.innerHTML='';st.log.forEach((x,i)=>{const d=document.createElement('div');d.className='logItem';let extra='';if(st.seenMinor&&i===Math.max(0,st.log.length-2))extra='<br><span style="color:#c4ccd8">……ここで別の選択をしたかった。</span>';d.innerHTML=`<strong>${x.year}年 / ${x.age}歳　${x.title}</strong><p>${x.choice}${extra}</p>`;box.appendChild(d)});if(!st.log.length)box.innerHTML='<p class="sub">まだ記録はありません。</p>'}
+function endSequence(){show('#ending');typeText($('#end1'),'「じゃあ、続きはそっちでやってよ。」',36,()=>{setTimeout(()=>typeText($('#end2'),'過去には、その時代の選択肢しかなかった。\nでも次の選択肢は、まだ作れる。',30,()=>setTimeout(()=>$('#life').classList.remove('hidden'),500)),650)})}
+$('#start').onclick=()=>show('#setup');$('#begin').onclick=()=>{reset();scenes=buildScenes();show('#game');ui();render()};$('#logBtn').onclick=()=>{renderLog();show('#log')};$('#backLog').onclick=()=>{show('#game');maybeAnomaly()};$('#life').onclick=()=>show('#final');$('#again').onclick=()=>location.reload();
+</script></body></html>
