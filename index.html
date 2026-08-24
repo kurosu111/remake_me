@@ -470,7 +470,53 @@ function timing(){let ms=Date.now()-shownAt;s.tele.times.push(ms);if(ms<1500)s.t
 function observerAside(text,cb){const story=$('#story'),choices=$('#choices');choices.innerHTML='';story.textContent='';const parts=cleanText(text).split('\n');let i=0;function next(){if(i>=parts.length){setTimeout(()=>cb&&cb(),700);return}const d=document.createElement('div');d.className='pause-line';d.textContent=parts[i++];story.appendChild(d);story.appendChild(document.createElement('br'));if(d.textContent.trim())beep(105,.04);setTimeout(next,d.textContent.trim()?1050:650)}setTimeout(next,650)}
 function maybeBlankComment(e,value,next){if(value.trim())return next();if(Math.random()>.52)return next();const comments=s.nameBlank?['……名前も空白だった。\\n\\nここも空白。\\n\\n君は「答えない」ことを結構ちゃんと選ぶんだね。','また空欄。\\n\\n言葉にならないなら、それも記録しておく。']:['……空白。\\n\\n答えたくない？\\nそれとも、まだ言葉にならない？','何も書かないんだ。\\n\\nそれも答えとして残しておくね。','また空欄。\\n\\n君、こういうところだけ急に黙るよね。'];observerAside(comments[Math.floor(Math.random()*comments.length)],next)}
 function compareRepeated(e,value,next){if(!e.repeatOf)return next();const prev=(s.inputs[e.repeatOf]||'').trim(),cur=value.trim();if(!prev||!cur)return next();if(prev!==cur){const lines=[`……あれ。\\n\\n前は「${prev}」って言ってたよね。\\n\\n今は「${cur}」なんだ。`,`前と違う。\\n\\n「${prev}」から「${cur}」に変わった。\\n\\n……どっちが本当？`,`覚えてるよ。\\n前は「${prev}」。\\n\\n今回は「${cur}」。\\n\\n質問する時期だけで、答えって変わるんだね。`];return observerAside(lines[Math.floor(Math.random()*lines.length)],next)}if(Math.random()<.35)return observerAside(`同じ答えだ。\\n\\n「${cur}」。\\n\\nそこは、ずっと変わらないんだね。`,next);next()}
-function judgeSpeed(ms,next){if(ms>=1500)return next();const severe=ms<700;const text=severe?`……${(ms/1000).toFixed(1)}秒。\\n\\n読んだ？\\n\\n俺の人生だから適当に押せるの？\\n\\n……今までも、そんなふうに自分の人生を決めてきた？`:`早いね。\\n\\n迷わないのは強さかもしれない。\\nでも今のは、考える前に押したように見えた。`;observerAside(text,next)}
+function judgeSpeed(ms,next){
+  if(ms>=1500)return next();
+  s.tele.speedLinesUsed ||= [];
+  const sec=(ms/1000).toFixed(1), fastCount=s.tele.fast||0;
+  const brutal=[
+    `……${sec}秒。\n\n今の、選んだんじゃなくて押しただけだよね。`,
+    `待って。\n\n${sec}秒って。\n\n文章、最後まで見えてた？`,
+    `……早すぎる。\n\n俺の人生だからって、雑に扱ってない？`,
+    `またそれ。\n\n考える前に指が動いてる。`,
+    `ねえ。\n\nそんなに先が見たい？\n\n途中はどうでもいいの？`,
+    `今の選択、${sec}秒。\n\n迷わなかったんじゃない。\n迷う前に終わらせた。`,
+    `……読んでないでしょ。\n\nいや、責めたいんじゃなくて。\nちょっと腹が立った。`,
+    `俺なら、もう少し考えてほしかった。\n\n……俺の人生なんだけど。`,
+    `また即決。\n\n今までも、嫌なことほど早く終わらせてきた？`,
+    `そうやって何でも「次へ」で済ませるの？\n\n……現実には、次へボタンなんてないよ。`,
+    `さっきから速い。\n\nもしかして、結果だけ見たい？`,
+    `……${fastCount}回目。\n\nもう偶然じゃないよね。`,
+    `一回くらい、止まって考えてよ。\n\n俺じゃなくて、自分のために。`,
+    `今のは適当すぎる。\n\nもしこれが本当に「あの時」だったら、それでも同じ速さで決める？`,
+    `……俺を早送りしないで。`,
+    `そんなに急いで人生をやり直して、どこへ行くの？`
+  ];
+  const quick=[
+    `早いね。\n\n決断が速いのか、考えるのを省いたのか。まだ分からない。`,
+    `もう決めたんだ。\n\n……その迷わなさ、少し覚えておく。`,
+    `今のはかなり早かった。\n\n直感？ それとも勢い？`,
+    `一瞬だったね。\n\n後から「やっぱり」って言わない？`,
+    `迷わないんだ。\n\nそういう選び方も、君らしさなのかな。`,
+    `ちょっと早い。\n\n答えが最初から決まってたならいいけど。`,
+    `……もう押した。\n\nその選択、本当に見た？`,
+    `考える時間、ほとんどなかったね。\n\n覚えておく。`,
+    `また早かった。\n\n決断力ってことにしておいていい？`,
+    `今の速さ、嫌いじゃない。\n\nでも、雑さとは紙一重だよ。`,
+    `早い。\n\n君、こういう質問だけ答えが速いんだね。`,
+    `……なるほど。\n\nそこは迷わないんだ。`
+  ];
+  const severe=ms<700, pool=severe?brutal:quick, prefix=severe?'b':'q';
+  let available=pool.map((_,i)=>i).filter(i=>!s.tele.speedLinesUsed.includes(prefix+i));
+  if(!available.length){
+    s.tele.speedLinesUsed=s.tele.speedLinesUsed.filter(x=>!x.startsWith(prefix));
+    available=pool.map((_,i)=>i);
+  }
+  const idx=available[Math.floor(Math.random()*available.length)];
+  s.tele.speedLinesUsed.push(prefix+idx);
+  if(s.tele.speedLinesUsed.length>24)s.tele.speedLinesUsed.shift();
+  observerAside(pool[idx],next)
+}
 function maybeKeywordReaction(e,value,next){
   if(!value)return next();
   const lower=value.toLowerCase();
